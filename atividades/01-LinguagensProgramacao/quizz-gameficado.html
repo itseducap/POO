@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo - Paradigmas de Programação</title>
+    <style>
+        :root {
+            --bg-primary: #0f0a1c;
+            --bg-card: #1a122e;
+            --bg-card-hover: #251b3f;
+            --accent-gold: #fbbf24;
+            --accent-gold-glow: #f59e0b;
+            --purple-light: #a855f7;
+            --purple-dark: #2e1065;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --correct-green: #10b981;
+            --wrong-red: #ef4444;
+            --border-color: #374151;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-card);
+            border: 2px solid var(--accent-gold);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(251, 191, 36, 0.2);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Screen States */
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        h1 {
+            color: var(--accent-gold);
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+
+        .subtitle {
+            color: var(--purple-light);
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+
+        .rules-card {
+            background: rgba(15, 10, 28, 0.6);
+            border: 1px solid var(--purple-light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .rules-card h3 {
+            color: var(--accent-gold);
+            margin-bottom: 10px;
+        }
+
+        .rules-card ul {
+            list-style-type: none;
+        }
+
+        .rules-card li {
+            margin: 8px 0;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-glow));
+            color: #000;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+        }
+
+        /* HUD Header */
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: rgba(15, 10, 28, 0.8);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--purple-dark);
+        }
+
+        .hud-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+        }
+
+        .streak-badge {
+            color: #f97316;
+            text-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: var(--bg-primary);
+            border-radius: 5px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid var(--purple-dark);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--purple-light), var(--accent-gold));
+            transition: width 0.3s ease;
+        }
+
+        /* Question Section */
+        .question-number {
+            color: var(--purple-light);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            color: #ffffff;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background: var(--bg-card-hover);
+            border: 1.5px solid rgba(168, 85, 247, 0.3);
+            border-radius: 10px;
+            padding: 16px 20px;
+            color: var(--text-main);
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: var(--accent-gold);
+            background: rgba(251, 191, 36, 0.08);
+            transform: translateX(4px);
+        }
+
+        .option-prefix {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--purple-light);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .option-btn.correct {
+            background: rgba(16, 185, 129, 0.2) !important;
+            border-color: var(--correct-green) !important;
+            color: #e5e7eb;
+        }
+
+        .option-btn.correct .option-prefix {
+            background: var(--correct-green);
+            color: #000;
+        }
+
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: var(--wrong-red) !important;
+            color: #e5e7eb;
+        }
+
+        .option-btn.wrong .option-prefix {
+            background: var(--wrong-red);
+            color: #fff;
+        }
+
+        /* Feedback Box */
+        .feedback-box {
+            display: none;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-box.correct {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--correct-green);
+            color: #a7f3d0;
+        }
+
+        .feedback-box.wrong {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--wrong-red);
+            color: #fca5a5;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            font-size: 1.05rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .next-btn-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* End Screen */
+        .result-card {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--purple-dark) 0%, var(--bg-primary) 100%);
+            border: 4px solid var(--accent-gold);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.3);
+        }
+
+        .score-number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .score-max {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .rank-title {
+            font-size: 1.6rem;
+            color: var(--purple-light);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .rank-desc {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(15, 10, 28, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--purple-dark);
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .summary-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .summary-lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.6rem; }
+            .hud-header { flex-wrap: wrap; gap: 10px; }
+            .stats-summary { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- TELA INICIAL -->
+    <div id="welcome-screen" class="screen active welcome-screen">
+        <h1>Paradigmas de Programação</h1>
+        <p class="subtitle">Desafio Acadêmico de Linguagens de Programação</p>
+        
+        <div class="rules-card">
+            <h3>Regras do Quiz:</h3>
+            <ul>
+                <li>⚡ <strong>10 Questões:</strong> Baseadas em conceitos de Arquitetura Von Neumann, Modelos Funcional, Lógico e Compilação/Interpretação.</li>
+                <li>🎯 <strong>Pontuação Base:</strong> 100 XP por cada resposta correta.</li>
+                <li>🔥 <strong>Bônus de Sequência:</strong> Acertos consecutivos geram multiplicadores de XP bônus (+20 XP cumulativo por combo!).</li>
+                <li>💡 <strong>Feedback Instantâneo:</strong> Explication acadêmica detalhada para cada questão.</li>
+            </ul>
+        </div>
+
+        <button class="btn" onclick="startQuiz()">Iniciar Desafio</button>
+    </div>
+
+    <!-- TELA DO QUIZ -->
+    <div id="quiz-screen" class="screen">
+        <div class="hud-header">
+            <div class="hud-stat">
+                <span class="stat-label">XP Total:</span>
+                <span id="score-display" class="stat-value">0</span>
+            </div>
+            <div class="hud-stat">
+                <span class="stat-label">Combo:</span>
+                <span id="streak-display" class="stat-value streak-badge">🔥 0</span>
+            </div>
+            <div class="hud-stat">
+                <span class="stat-label">Questão:</span>
+                <span id="q-counter" class="stat-value">1/10</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div class="question-number" id="question-category">Paradigma Imperativo</div>
+        <div class="question-text" id="question-text">Carregando pergunta...</div>
+
+        <div class="options-grid" id="options-container">
+            <!-- Opções inseridas via JS -->
+        </div>
+
+        <div id="feedback-box" class="feedback-box">
+            <div id="feedback-title" class="feedback-title"></div>
+            <div id="feedback-text"></div>
+        </div>
+
+        <div class="next-btn-container">
+            <button id="next-btn" class="btn" style="display: none;" onclick="nextQuestion()">Próxima Questão</button>
+        </div>
+    </div>
+
+    <!-- TELA FINAL -->
+    <div id="result-screen" class="screen result-card">
+        <h1>Desafio Concluído!</h1>
+        <p class="subtitle">Confira seu desempenho final na disciplina</p>
+
+        <div class="score-circle">
+            <span class="score-number" id="final-score">0</span>
+            <span class="score-max">XP CONQUISTADO</span>
+        </div>
+
+        <div class="rank-title" id="rank-title">Mestre dos Algoritmos</div>
+        <div class="rank-desc" id="rank-desc">Sua afinidade com paradigmas de programação é excelente!</div>
+
+        <div class="stats-summary">
+            <div class="summary-item">
+                <span class="summary-val" id="correct-count">0/10</span>
+                <span class="summary-lbl">Acertos</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-val" id="max-streak-display">0</span>
+                <span class="summary-lbl">Maior Sequência</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-val" id="accuracy-display">0%</span>
+                <span class="summary-lbl">Precisão</span>
+            </div>
+        </div>
+
+        <button class="btn" onclick="restartQuiz()">Tentar Novamente</button>
+    </div>
+</div>
+
+<script>
+const quizQuestions = [
+    {
+        category: "Arquitetura & Modelo Imperativo",
+        question: "Na Arquitetura Von Neumann e no paradigma Imperativo, como a memória de dados de um programa em execução é estruturada?",
+        options: [
+            "Em uma única fila contínua onde instruções e variáveis são tratadas como imutáveis.",
+            "Dividida em três áreas principais: Dados Estáticos/Globais, Pilha de Execução (Run-time Stack) e Heap.",
+            "Em tabelas de fatos e regras de inferência lógica gerenciadas por uma Máquina Virtual.",
+            "Apenas na Pilha de Execução, não existindo alocação dinâmica em tempo de execução."
+        ],
+        answer: 1,
+        explanation: "No modelo imperativo clássico (como C, C++ e Java), a memória de dados subdivide-se em: Área Estática/Global (variáveis globais/constantes), Run-time Stack (Registros de Ativação de funções/métodos) e Heap (alocação dinâmica de memória em tempo de execução)."
+    },
+    {
+        category: "Estruturas de Execução",
+        question: "O que é armazenado em um Registro de Ativação (Activation Record / Stack Frame) na Pilha de Execução (Run-time Stack)?",
+        options: [
+            "Apenas as variáveis globais e as definições de classes do sistema.",
+            "A base de dados de regras lógicas e o unificador de termos da linguagem.",
+            "Variáveis locais da função, parâmetros passados e o endereço de retorno (Program Counter anterior).",
+            "O código fonte original e o código objeto gerado pelo montador."
+        ],
+        answer: 2,
+        explanation: "Cada chamada de função empilha um Registro de Ativação contendo as variáveis locais, parâmetros recebidos, o endereço de retorno (para onde o Program Counter deve voltar após a execução) e estados de registradores."
+    },
+    {
+        category: "Paradigma Funcional",
+        question: "Qual é a principal característica da transformação de dados no Modelo Funcional puro em comparação ao Modelo Imperativo?",
+        options: [
+            "Uso extensivo do comando de atribuição para modificar o estado de variáveis existentes em memória.",
+            "A transformação ocorre pela aplicação de funções e construção de novos valores a partir dos antigos, enfatizando dados imutáveis.",
+            "Execução orientada a um banco de fatos e mecanismo automático de backtracking.",
+            "A ausência total de funções de ordem superior (first-class functions)."
+        ],
+        answer: 1,
+        explanation: "No paradigma funcional (como Haskell ou Scheme puro), não há mutação direta de memória/atribuição destructiva. Novos valores são construídos a partir de valores antigos por aplicação de funções puro-de-efeito, priorizando a imutabilidade."
+    },
+    {
+        category: "História e Fundamentos Lógicos",
+        question: "A Tese de Church-Turing estabelece a equivalência de poder computacional entre quais dois modelos teóricos criados em 1936?",
+        options: [
+            "A Máquina de Turing (Alan Turing) e o Cálculo Lambda / λ-calculus (Alonzo Church).",
+            "A Arquitetura Von Neumann e a Linguagem Algol 60.",
+            "A Notação BNF de Backus e o Sistema LCF de Robin Milner.",
+            "O motor de diferenças de Babbage e a máquina ENIAC de Eckert e Mauchly."
+        ],
+        answer: 0,
+        explanation: "Alonzo Church (com o λ-calculus) e Alan Turing (com a Máquina de Turing) provaram de forma independente que o Entscheidungsproblem não tinha solução, demonstrando posteriormente que ambos os seus modelos formais de computação possuem poder equivalente (Tese de Church-Turing)."
+    },
+    {
+        category: "Paradigma Lógico",
+        question: "Como o programador desenvolve soluções ao utilizar uma linguagem de programação lógica como o Prolog?",
+        options: [
+            "Escrevendo algoritmos sequenciais detalhados informando passo a passo como alterar os registradores.",
+            "Fornecendo uma base de conhecimento composta de Fatos e Regras, enquanto um motor de inferência busca responder a consultas.",
+            "Criando hierarquias de classes com destruidores manuais para gerenciamento do heap.",
+            "Compilando diretamente expressões algébricas para código de máquina sem abstração intermediária."
+        ],
+        answer: 1,
+        explanation: "No paradigma lógico (declarativo), o programador não descreve o procedimento ('como resolver'), mas sim declara a estrutura do problema através de Fatos e Regras de inferência baseadas em lógica de predicados (Cláusulas de Horn)."
+    },
+    {
+        category: "Tradução de Linguagens",
+        question: "Qual é a diferença fundamental no processo de execução entre um programa Compilado e um programa Interpretado?",
+        options: [
+            "O compilador traduz o código fonte diretamente para bytecode Java, enquanto o interpretador gera código de máquina nativo.",
+            "Linguagens interpretadas não possuem analisadores sintáticos (parsers).",
+            "A compilação traduz todo o código fonte para linguagem de máquina/executável antes da execução; a interpretação analisa e executa a representação do programa em tempo de execução.",
+            "Programas compilados dependem obrigatoriamente de uma Máquina Virtual para rodar no sistema operacional."
+        ],
+        answer: 2,
+        explanation: "A compilação realiza a análise e tradução completa do programa fonte para código executável antes do uso. A interpretação utiliza um programa (o interpretador em código de máquina) que lê, analisa (AST/bytecode) e executa as instruções dinamicamente."
+    },
+    {
+        category: "Máquinas Virtuais & Bytecode",
+        question: "Linguagens como Java e Python utilizam abordagens baseadas em Máquinas Virtuais. Qual é uma vantagem principal da geração de Bytecode?",
+        options: [
+            "Elimina completamente a necessidade de gerenciamento de memória no Heap.",
+            "Proporcionar portabilidade do código intermediário entre diferentes plataformas e sistemas operacionais.",
+            "Garantir que a execução seja sempre 10x mais rápida que C++ nativo.",
+            "Impedir o uso de tipagem dinâmica na linguagem."
+        ],
+        answer: 1,
+        explanation: "O Bytecode é um conjunto de instruções genéricas para uma máquina virtual (como a JVM ou a PVM). Isso permite que o mesmo arquivo compilado/pré-compilado rode em qualquer sistema operacional que possua a Máquina Virtual correspondente."
+    },
+    {
+        category: "Sistemas de Tipos",
+        question: "Qual é a diferença central entre Linguagens Estaticamente Tipadas e Dinamicamente Tipadas?",
+        options: [
+            "Linguagens estáticas realizam a checagem de tipos antes da execução (em tempo de compilação); linguagens dinâmicas realizam a checagem durante a execução.",
+            "Linguagens dinâmicas não possuem tipos de dados como inteiros ou booleans.",
+            "Linguagens estáticas não permitem o uso de ponteiros ou referências.",
+            "Linguagens estáticas são obrigatoriamente interpretadas."
+        ],
+        answer: 0,
+        explanation: "Em linguagens estaticamente tipadas (ex: Java, C++, SML), os tipos de expressões e operações são verificados antes de rodar. Em linguagens dinamicamente tipadas (ex: Python), erros de tipo só ocorrem no momento exato em que a linha de código é executada."
+    },
+    {
+        category: "Evolução das Linguagens",
+        question: "Qual notação formal foi desenvolvida por John Backus para descrever a sintaxe de linguagens de programação, usada inicialmente no Algol 60?",
+        options: [
+            "Cálculo Lambda (λ-calculus).",
+            "Backus-Naur Format (BNF).",
+            "Máquina de Estados de Mealy.",
+            "Cláusulas de Horn."
+        ],
+        answer: 1,
+        explanation: "John Backus desenvolveu a notação matemática BNF (Backus-Naur Format), formalismo gramatical livre de contexto utilizado para descrever rigorosamente a sintaxe de Algol 60 e da maioria das linguagens de programação modernas."
+    },
+    {
+        category: "Gerenciamento de Memória",
+        question: "O que caracteriza o problema de 'Vazamento de Memória' (Memory Leak) comum em linguagens como C++ sem Coletor de Lixo (Garbage Collector)?",
+        options: [
+            "A tentativa de acessar uma variável local fora de seu escopo na pilha.",
+            "A falha ao liberar objetos alocados no Heap que não são mais referenciados, consumindo a memória do sistema.",
+            "A modificação acidental de constantes globais na área estática.",
+            "O estouro da Pilha de Execução devido a uma recursão infinita (Stack Overflow)."
+        ],
+        answer: 1,
+        explanation: "Em C/C++, a alocação dinâmica no Heap deve ser liberada manualmente (ex: `delete` ou `free`). Se o programador perder as referências para os objetos no Heap sem liberá-los, a memória fica inacessível e ocupada até o encerramento do processo (Memory Leak)."
+    }
+];
+
+let currentQuestionIndex = 0;
+let score = 0;
+let streak = 0;
+let maxStreak = 0;
+let correctAnswersCount = 0;
+
+// Elementos do DOM
+const welcomeScreen = document.getElementById('welcome-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+
+const scoreDisplay = document.getElementById('score-display');
+const streakDisplay = document.getElementById('streak-display');
+const qCounter = document.getElementById('q-counter');
+const progressBar = document.getElementById('progress-bar');
+
+const qCategory = document.getElementById('question-category');
+const qText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+
+const feedbackBox = document.getElementById('feedback-box');
+const feedbackTitle = document.getElementById('feedback-title');
+const feedbackText = document.getElementById('feedback-text');
+const nextBtn = document.getElementById('next-btn');
+
+function startQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    streak = 0;
+    maxStreak = 0;
+    correctAnswersCount = 0;
+
+    welcomeScreen.classList.remove('active');
+    resultScreen.classList.remove('active');
+    quizScreen.classList.add('active');
+
+    updateHUD();
+    loadQuestion();
+}
+
+function updateHUD() {
+    scoreDisplay.textContent = score;
+    streakDisplay.textContent = `🔥 ${streak}`;
+    qCounter.textContent = `${currentQuestionIndex + 1}/${quizQuestions.length}`;
+    
+    const progressPercent = ((currentQuestionIndex) / quizQuestions.length) * 100;
+    progressBar.style.width = `${progressPercent}%`;
+}
+
+function loadQuestion() {
+    const q = quizQuestions[currentQuestionIndex];
+    qCategory.textContent = q.category;
+    qText.textContent = q.question;
+
+    optionsContainer.innerHTML = '';
+    feedbackBox.style.display = 'none';
+    feedbackBox.className = 'feedback-box';
+    nextBtn.style.display = 'none';
+
+    const prefixes = ['A', 'B', 'C', 'D'];
+
+    q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.onclick = () => selectOption(idx);
+
+        btn.innerHTML = `
+            <span class="option-prefix">${prefixes[idx]}</span>
+            <span>${opt}</span>
+        `;
+        optionsContainer.appendChild(btn);
+    });
+
+    updateHUD();
+}
+
+function selectOption(selectedIndex) {
+    const q = quizQuestions[currentQuestionIndex];
+    const optionBtns = optionsContainer.children;
+
+    // Desabilitar todos os botões após escolha
+    for (let btn of optionBtns) {
+        btn.disabled = true;
+    }
+
+    const isCorrect = (selectedIndex === q.answer);
+
+    if (isCorrect) {
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+        
+        // Cálculo de pontuação: 100 base + bônus de streak
+        const streakBonus = (streak - 1) * 20;
+        const pointsEarned = 100 + streakBonus;
+        score += pointsEarned;
+        correctAnswersCount++;
+
+        optionBtns[selectedIndex].classList.add('correct');
+
+        feedbackBox.classList.add('correct');
+        feedbackTitle.innerHTML = `✓ Resposta Correta! (+${pointsEarned} XP)`;
+        feedbackText.textContent = q.explanation;
+    } else {
+        streak = 0;
+        optionBtns[selectedIndex].classList.add('wrong');
+        optionBtns[q.answer].classList.add('correct');
+
+        feedbackBox.classList.add('wrong');
+        feedbackTitle.innerHTML = `✗ Resposta Incorreta!`;
+        feedbackText.textContent = q.explanation;
+    }
+
+    feedbackBox.style.display = 'block';
+    nextBtn.style.display = 'inline-block';
+    
+    scoreDisplay.textContent = score;
+    streakDisplay.textContent = `🔥 ${streak}`;
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizQuestions.length) {
+        loadQuestion();
+    } else {
+        showResults();
+    }
+}
+
+function showResults() {
+    quizScreen.classList.remove('active');
+    resultScreen.classList.add('active');
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('correct-count').textContent = `${correctAnswersCount}/${quizQuestions.length}`;
+    document.getElementById('max-streak-display').textContent = maxStreak;
+    
+    const accuracy = Math.round((correctAnswersCount / quizQuestions.length) * 100);
+    document.getElementById('accuracy-display').textContent = `${accuracy}%`;
+
+    // Título e ranking personalizado
+    const rankTitle = document.getElementById('rank-title');
+    const rankDesc = document.getElementById('rank-desc');
+
+    if (accuracy === 100) {
+        rankTitle.textContent = "🧙‍♂️ Mestre Supremo dos Paradigmas";
+        rankDesc.textContent = "Desempenho perfeito! Você domina desde os registradores de Von Neumann até a inferência lógica do Prolog!";
+    } else if (accuracy >= 80) {
+        rankTitle.textContent = "🚀 Arquiteto de Software Avançado";
+        rankDesc.textContent = "Excelente conhecimento sobre modelos de computação, sistemas de tipos e gestão de memória.";
+    } else if (accuracy >= 60) {
+        rankTitle.textContent = "💻 Desenvolvedor Pleno";
+        rankDesc.textContent = "Bom domínio dos conceitos essenciais! Com mais alguns estudos sobre tipagem e interpretação você chega ao topo.";
+    } else {
+        rankTitle.textContent = "📚 Aprendiz de Compiladores";
+        rankDesc.textContent = "Recomenda-se revisar o material sobre a Arquitetura Von Neumann, Cálculo Lambda e Compilação vs Interpretação.";
+    }
+}
+
+function restartQuiz() {
+    startQuiz();
+}
+</script>
+
+</body>
+</html>

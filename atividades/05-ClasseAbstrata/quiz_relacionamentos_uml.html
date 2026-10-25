@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Gamificado: Relacionamentos entre Classes em UML</title>
+    <style>
+        :root {
+            --bg-dark: #0d0914;
+            --bg-card: #181226;
+            --bg-card-hover: #231b36;
+            --purple-deep: #2a1b4e;
+            --purple-light: #4a154b;
+            --purple-accent: #7b2cbf;
+            --gold-main: #ffd700;
+            --gold-hover: #f1c40f;
+            --gold-dark: #b89700;
+            --text-light: #f8f9fa;
+            --text-muted: #a0a0b8;
+            --success: #2ecc71;
+            --success-bg: rgba(46, 204, 113, 0.15);
+            --error: #e74c3c;
+            --error-bg: rgba(231, 76, 60, 0.15);
+            --border-radius: 12px;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(123, 44, 191, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 40%);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: var(--border-radius);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(123, 44, 191, 0.2);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .quiz-header {
+            background: linear-gradient(135deg, var(--purple-deep), #150c28);
+            padding: 20px 30px;
+            border-bottom: 2px solid var(--gold-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .stat-box.xp-box {
+            color: var(--gold-main);
+        }
+
+        .stat-box.streak-box {
+            color: #ff7b00;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--purple-accent), var(--gold-main));
+            transition: width 0.4s ease;
+        }
+
+        .screen {
+            padding: 30px;
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen */
+        .welcome-card {
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        .welcome-card h1 {
+            font-size: 2.2rem;
+            color: var(--gold-main);
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .welcome-card p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .rules-list {
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            border-left: 4px solid var(--gold-main);
+        }
+
+        .rules-list h3 {
+            color: var(--gold-main);
+            margin-bottom: 12px;
+        }
+
+        .rules-list li {
+            margin-bottom: 8px;
+            color: var(--text-light);
+            list-style-type: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .question-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gold-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 25px;
+            color: #ffffff;
+        }
+
+        .code-snippet {
+            background: #05030a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--gold-main);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            display: inline-block;
+            margin: 5px 0;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background: var(--bg-card-hover);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius);
+            padding: 16px 20px;
+            color: var(--text-light);
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: var(--purple-deep);
+            border-color: var(--purple-accent);
+            transform: translateX(5px);
+        }
+
+        .option-btn.selected {
+            border-color: var(--gold-main);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .option-btn.correct {
+            background: var(--success-bg) !important;
+            border-color: var(--success) !important;
+            color: #ffffff;
+        }
+
+        .option-btn.incorrect {
+            background: var(--error-bg) !important;
+            border-color: var(--error) !important;
+            color: #ffffff;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .feedback-box {
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-box.correct {
+            display: block;
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            color: #d4edda;
+        }
+
+        .feedback-box.incorrect {
+            display: block;
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            color: #f8d7da;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-main), var(--gold-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+            background: linear-gradient(135deg, var(--gold-hover), var(--gold-main));
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .action-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--purple-accent), var(--purple-deep));
+            border: 2px solid var(--gold-main);
+            border-radius: 30px;
+            color: var(--gold-main);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .stat-card .val {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--gold-main);
+            margin-top: 5px;
+        }
+
+        .leaderboard-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 215, 0, 0.15);
+        }
+
+        .leaderboard-section h3 {
+            color: var(--gold-main);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .leaderboard-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .leaderboard-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .result-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .quiz-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .stats-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .screen {
+                padding: 20px;
+            }
+            .welcome-card h1 {
+                font-size: 1.6rem;
+            }
+            .question-text {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="quiz-header">
+            <div class="brand-title">
+                <span>❖</span> UML Architecture Quiz
+            </div>
+            <div class="stats-container">
+                <div class="stat-box xp-box">
+                    <span>⚡</span> <span id="xp-display">0 XP</span>
+                </div>
+                <div class="stat-box streak-box">
+                    <span>🔥</span> <span id="streak-display">0x Streak</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div id="start-screen" class="screen active">
+            <div class="welcome-card">
+                <h1>Relacionamentos entre Classes em UML</h1>
+                <p>Análise, Projeto e Modelagem Orientada a Objetos para Engenharia de Software</p>
+                
+                <div class="rules-list">
+                    <h3>🏆 Regras do Jogo:</h3>
+                    <ul>
+                        <li>✦ <strong>10 Questões:</strong> Teste seus conhecimentos conceituais e práticos.</li>
+                        <li>✦ <strong>Pontuação Base:</strong> 100 XP para cada resposta correta.</li>
+                        <li>✦ <strong>Bônus de Sequência (Combo):</strong> Respostas corretas consecutivas adicionam +25 XP bônus multiplicativo por nível de streak!</li>
+                        <li>✦ <strong>Feedback Detalhado:</strong> Explicações arquiteturais detalhadas para cada alternativa.</li>
+                    </ul>
+                </div>
+
+                <button class="btn-primary" id="start-btn">Iniciar Quiz Gamificado</button>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="question-meta">
+                <span id="question-number">Questão 1 de 10</span>
+                <span id="question-category">Categoria</span>
+            </div>
+            
+            <div class="question-text" id="question-text">
+                Texto da questão vai aqui...
+            </div>
+
+            <div class="options-grid" id="options-container">
+                <!-- As opções serão inseridas dinamicamente via JS -->
+            </div>
+
+            <div class="feedback-box" id="feedback-box">
+                <div class="feedback-title" id="feedback-title"></div>
+                <div id="feedback-text"></div>
+            </div>
+
+            <div class="action-container">
+                <button class="btn-primary" id="next-btn" disabled>Próxima Questão ➔</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <div class="result-header">
+                <h2>Desempenho Final</h2>
+                <div class="rank-badge" id="rank-badge">Arquiteto Júnior</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div>Total de XP</div>
+                    <div class="val" id="final-xp">0</div>
+                </div>
+                <div class="stat-card">
+                    <div>Taxa de Acerto</div>
+                    <div class="val" id="final-accuracy">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div>Maior Sequência</div>
+                    <div class="val" id="final-streak">0x</div>
+                </div>
+            </div>
+
+            <div class="leaderboard-section">
+                <h3>🏆 Histórico do Navegador (Top Pontuações)</h3>
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Pontuação</th>
+                            <th>Precisão</th>
+                            <th>Patente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Histórico persistido -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="result-actions">
+                <button class="btn-primary" id="restart-btn">Tentar Novamente</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            {
+                category: "Fases da Modelagem",
+                question: "Qual a diferença fundamental entre a visão do Diagrama de Classes na Fase de Análise (Modelo Conceitual) e na Fase de Projeto (Modelo de Domínio)?",
+                options: [
+                    "A Fase de Análise define detalhadamente métodos, tipos de retorno e visibilidade, enquanto a Fase de Projeto foca apenas no domínio das informações.",
+                    "O Modelo Conceitual foca na estrutura das informações do domínio sem métodos ou detalhes de implementação; o Modelo de Domínio define rigidamente métodos, operações e soluções de software.",
+                    "O Modelo Conceitual é representado apenas em código-fonte, enquanto o Modelo de Domínio é feito através de esquemas de banco de dados relacional.",
+                    "Não há diferença prática entre as duas fases na UML; ambas exigem a especificação completa de atributos e assinaturas de métodos."
+                ],
+                correct: 1,
+                explanation: "Exato! Na Fase de Análise (Modelo Conceitual), foca-se na estrutura do domínio de informação sem se preocupar com métodos ('o como'). Já na Fase de Projeto (Modelo de Domínio), os métodos e operações da solução de software são rigidamente definidos."
+            },
+            {
+                category: "Sintaxe & Visibilidade",
+                question: "Em um diagrama de classes UML, o que representa o símbolo de visibilidade '#' antes do nome de um atributo ou método (ex: <span class='code-snippet'># saldo: double</span>)?",
+                options: [
+                    "Visibilidade Pública (+), acessível por qualquer outra classe do sistema.",
+                    "Visibilidade Privada (-), acessível estritamente e apenas por métodos da própria classe.",
+                    "Visibilidade Protegida (#), permitindo acesso pela própria classe e por suas subclasses derivantes.",
+                    "Atributo Derivado (/), indicando que o valor é calculado dinamicamente."
+                ],
+                correct: 2,
+                explanation: "Correto! O símbolo '#' representa a visibilidade Protegida (Protected). Ela permite que o membro seja acessado na própria classe e em suas subclasses (herança)."
+            },
+            {
+                category: "Sintaxe Avançada",
+                question: "Analise o atributo representado na UML como <span class='code-snippet'>/ dt_encerramento: Date [0..1]</span>. O que o caractere de barra '/' indica?",
+                options: [
+                    "Indica um método abstrato que precisa ser sobrescrito.",
+                    "Indica um atributo derivado, cujo valor não é armazenado diretamente, mas calculado sob demanda a partir de outros dados do sistema.",
+                    "Indica um atributo privado de acesso restrito.",
+                    "Indica que o atributo é uma chave primária no banco de dados."
+                ],
+                correct: 1,
+                explanation: "Perfeito! A barra ('/') antes do nome do atributo indica um Atributo Derivado. Ele não armazena dados fixos diretamente, sendo calculado via função/método a partir de outras variáveis existentes."
+            },
+            {
+                category: "Paradigma Todo-Parte",
+                question: "Qual é a diferença crucial entre Agregação (losango vazado ♢) e Composição (losango preenchido ♦)?",
+                options: [
+                    "Na Agregação existe dependência existencial absoluta (se o Todo for deletado, a Parte morre junto); na Composição a parte sobrevive isoladamente.",
+                    "A Composição representa um vínculo fraco onde as partes podem ser compartilhadas, enquanto a Agregação é um relacionamento exclusivo de herança.",
+                    "Na Agregação (vínculo fraco), a Parte pode existir independentemente do Todo. Na Composição (vínculo forte), existe dependência existencial absoluta (a Parte morre se o Todo for destruído).",
+                    "A Composição só pode conectar exatamente duas classes, enquanto a Agregação aceita conexões ternárias com losangos centrais."
+                ],
+                correct: 2,
+                explanation: "Exato! Agregação = Vínculo Fraco (ex: Pessoa e Conta_Comum; se a Pessoa é removida, a Conta ainda existe). Composição = Vínculo Forte e dependência vital (ex: Edicao e Artigo; se a Edição for deletada, seus Artigos deixam de existir no sistema)."
+            },
+            {
+                category: "Matriz de Multiplicidade",
+                question: "Ao analisar a ponta de uma associação UML com o símbolo de multiplicidade <span class='code-snippet'>1..*</span>, qual é o seu significado prático?",
+                options: [
+                    "A associação é estritamente opcional, podendo existir zero ou apenas uma instância.",
+                    "A associação é obrigatória, exigindo no mínimo uma instância e no máximo muitas instâncias (sem limite superior).",
+                    "A associação aceita no mínimo uma instância e no máximo dez instâncias.",
+                    "A associação é idêntica ao símbolo '0..*', permitindo zero instâncias."
+                ],
+                correct: 1,
+                explanation: "Correto! '1..*' significa no mínimo 1 e no máximo muitos. Na prática, é obrigatório ter pelo menos uma instância associada."
+            },
+            {
+                category: "Graus de Associação",
+                question: "Como é representada graficamente na UML uma Associação Ternária (ou N-ária), que conecta mais de duas classes simultaneamente?",
+                options: [
+                    "Por uma linha pontilhada simples conectando as três classes.",
+                    "Por um losango central unindo as linhas de conexão que partem das classes envolvidas.",
+                    "Por uma seta com triângulo preenchido na classe principal.",
+                    "Por uma classe abstrata escrita em itálico situada entre as classes."
+                ],
+                correct: 1,
+                explanation: "Muito bem! Associações Ternárias/N-árias utilizam um losango central de onde saem as linhas de associação para cada classe envolvida (ex: Professor, Turma e Sala_de_Aula)."
+            },
+            {
+                category: "Mapeamento N:N Avançado",
+                question: "Qual é a limitação de uma Classe Associativa (linha tracejada conectada à associação) e quando se deve substituí-la por uma Classe Intermediária?",
+                options: [
+                    "A Classe Associativa só é válida quando existe um ÚNICO papel na relação. Se uma entidade puder desempenhar múltiplos papéis na mesma relação (ex: mesmo ator em múltiplos papéis no mesmo filme), deve-se usar uma Classe Intermediária.",
+                    "A Classe Associativa não permite guardar atributos, apenas métodos.",
+                    "A Classe Intermediária só pode ser usada se houver herança envolvida no relacionamento N:N.",
+                    "A Classe Associativa não possui limitações; o uso da Classe Intermediária é obsoleto na UML moderna."
+                ],
+                correct: 0,
+                explanation: "Perfeito! A Classe Associativa vincula-se ao par de instâncias. Se um Ator interpreta 2 papéis no MESMO filme, a Classe Associativa falha. A Classe Intermediária vira uma 'ponte física' permitindo múltiplas instâncias da relação."
+            },
+            {
+                category: "Herança & Polimorfismo",
+                question: "No Diagrama de Classes da UML, como uma Classe Abstrata (que não pode ser instanciada diretamente) é identificada visualmente?",
+                options: [
+                    "Seu nome é sublinhado no compartimento superior do retângulo.",
+                    "Seu nome é escrito em formato itálico no compartimento superior do retângulo.",
+                    "O retângulo da classe possui bordas pontilhadas e fundo cinza.",
+                    "Seu nome vem precedido obrigatoriamente por um símbolo de losango vazado."
+                ],
+                correct: 1,
+                explanation: "Correto! Por convenção da UML, o nome de uma Classe Abstrata é representado em itálico (ex: <i>Conta_Comum</i> ou <i>Instituicao</i>)."
+            },
+            {
+                category: "Navegabilidade",
+                question: "Em uma linha de associação entre a classe 'Socio' e 'Dependente', o que significa uma Seta de Navegabilidade na ponta da classe 'Dependente'?",
+                options: [
+                    "Indica que a classe Dependente herda todos os atributos e métodos de Socio.",
+                    "Define o sentido em que os métodos podem ser disparados (Socio dispara métodos em Dependente, mas a recíproca não é verdadeira).",
+                    "Indica que a classe Dependente possui dependência existencial e será excluída se Socio for deletado.",
+                    "Representa que o relacionamento é unário ou reflexivo."
+                ],
+                correct: 1,
+                explanation: "Exato! A Seta de Navegabilidade especifica a direção de invocação/conhecimento: 'Socio' navega até 'Dependente' e dispara suas operações, porém 'Dependente' não enxerga ou spara operações diretamente em 'Socio'."
+            },
+            {
+                category: "Herança",
+                question: "Qual símbolo gráfico deve ser utilizado para indicar o relacionamento de Herança (Generalização / Especialização) entre Subclasses e uma Superclasse?",
+                options: [
+                    "Uma linha contínua terminada em um losango preenchido apontando para a Superclasse.",
+                    "Uma linha contínua terminada em uma seta de triângulo vazado (não preenchido) apontando para a Superclasse.",
+                    "Uma linha tracejada terminada em uma seta simples apontando para a Subclasse.",
+                    "Uma linha contínua com uma seta aberta simples em ambas as extremidades."
+                ],
+                correct: 1,
+                explanation: "Perfeito! A Herança/Generalização é representada por uma linha com uma seta de triângulo vazado apontando diretamente da subclass para a superclasse."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let scoreXP = 0;
+        let streak = 0;
+        let maxStreak = 0;
+        let correctAnswersCount = 0;
+        let selectedOptionIndex = null;
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const xpDisplay = document.getElementById('xp-display');
+        const streakDisplay = document.getElementById('streak-display');
+        const progressBar = document.getElementById('progress-bar');
+
+        const questionNumber = document.getElementById('question-number');
+        const questionCategory = document.getElementById('question-category');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackBox = document.getElementById('feedback-box');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+
+        const finalXp = document.getElementById('final-xp');
+        const finalAccuracy = document.getElementById('final-accuracy');
+        const finalStreak = document.getElementById('final-streak');
+        const rankBadge = document.getElementById('rank-badge');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', handleNextQuestion);
+        restartBtn.addEventListener('click', startQuiz);
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            scoreXP = 0;
+            streak = 0;
+            maxStreak = 0;
+            correctAnswersCount = 0;
+
+            updateStatsDisplay();
+            
+            startScreen.classList.remove('active');
+            resultScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            resetQuestionState();
+            const q = questions[currentQuestionIndex];
+
+            // Progress Bar
+            const progressPercent = ((currentQuestionIndex) / questions.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+
+            questionNumber.textContent = `Questão ${currentQuestionIndex + 1} de ${questions.length}`;
+            questionCategory.textContent = q.category;
+            questionText.innerHTML = q.question;
+
+            optionsContainer.innerHTML = '';
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<span>${optText}</span>`;
+                btn.addEventListener('click', () => selectOption(idx));
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function resetQuestionState() {
+            selectedOptionIndex = null;
+            nextBtn.disabled = true;
+            feedbackBox.className = 'feedback-box';
+            feedbackBox.style.display = 'none';
+        }
+
+        function selectOption(index) {
+            if (selectedOptionIndex !== null) return; // Impede múltiplas escolhas
+            selectedOptionIndex = index;
+
+            const q = questions[currentQuestionIndex];
+            const optionButtons = optionsContainer.querySelectorAll('.option-btn');
+            
+            const isCorrect = (index === q.correct);
+
+            if (isCorrect) {
+                streak++;
+                if (streak > maxStreak) maxStreak = streak;
+                
+                // Cálculo Gamificado: Base 100 + Bônus de Streak (+25 * streak)
+                const streakBonus = (streak - 1) * 25;
+                const gainedXP = 100 + streakBonus;
+                scoreXP += gainedXP;
+
+                correctAnswersCount++;
+
+                optionButtons[index].classList.add('correct');
+                
+                feedbackTitle.innerHTML = `<span>✓</span> Correto! (+${gainedXP} XP)`;
+                if (streak > 1) {
+                    feedbackTitle.innerHTML += ` <small style="color:var(--gold-main); font-size:0.85rem;">[🔥 Combo ${streak}x!]</small>`;
+                }
+                feedbackBox.className = 'feedback-box correct';
+            } else {
+                streak = 0; // Perde o streak
+                optionButtons[index].classList.add('incorrect');
+                optionButtons[q.correct].classList.add('correct'); // Destaca a resposta certa
+                
+                feedbackTitle.innerHTML = `<span>✗</span> Incorreto!`;
+                feedbackBox.className = 'feedback-box incorrect';
+            }
+
+            // Desabilita todos os botões após a resposta
+            optionButtons.forEach(btn => btn.disabled = true);
+
+            feedbackText.innerHTML = q.explanation;
+            feedbackBox.style.display = 'block';
+
+            updateStatsDisplay();
+            nextBtn.disabled = false;
+        }
+
+        function updateStatsDisplay() {
+            xpDisplay.textContent = `${scoreXP} XP`;
+            streakDisplay.textContent = `${streak}x Streak`;
+        }
+
+        function handleNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function getRankTitle(accuracy, xp) {
+            if (accuracy === 100) return "🏛️ Arquiteto Lendário de Software";
+            if (accuracy >= 80) return "💻 Engenheiro Sênior de Sistemas";
+            if (accuracy >= 60) return "⚙️ Desenvolvedor Pleno OO";
+            if (accuracy >= 40) return "🛠️ Desenvolvedor Júnior";
+            return "📘 Estagiário em Diagramação UML";
+        }
+
+        function finishQuiz() {
+            progressBar.style.width = '100%';
+            quizScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+
+            const accuracy = Math.round((correctAnswersCount / questions.length) * 100);
+            const rank = getRankTitle(accuracy, scoreXP);
+
+            finalXp.textContent = `${scoreXP} XP`;
+            finalAccuracy.textContent = `${accuracy}%`;
+            finalStreak.textContent = `${maxStreak}x`;
+            rankBadge.textContent = rank;
+
+            saveScoreToLeaderboard(scoreXP, accuracy, rank);
+            renderLeaderboard();
+        }
+
+        function saveScoreToLeaderboard(xp, accuracy, rank) {
+            const history = JSON.parse(localStorage.getItem('uml_quiz_scores') || '[]');
+            const newEntry = {
+                date: new Date().toLocaleDateString('pt-BR'),
+                score: xp,
+                accuracy: `${accuracy}%`,
+                rank: rank
+            };
+
+            history.push(newEntry);
+            // Ordenar por score decrescente e manter apenas as top 5
+            history.sort((a, b) => b.score - a.score);
+            const topScores = history.slice(0, 5);
+
+            localStorage.setItem('uml_quiz_scores', JSON.stringify(topScores));
+        }
+
+        function renderLeaderboard() {
+            const history = JSON.parse(localStorage.getItem('uml_quiz_scores') || '[]');
+            leaderboardBody.innerHTML = '';
+
+            if (history.length === 0) {
+                leaderboardBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhuma tentativa registrada ainda.</td></tr>`;
+                return;
+            }
+
+            history.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.date}</td>
+                    <td style="color:var(--gold-main); font-weight:bold;">${item.score} XP</td>
+                    <td>${item.accuracy}</td>
+                    <td style="font-size:0.9rem;">${item.rank}</td>
+                `;
+                leaderboardBody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
